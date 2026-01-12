@@ -139,6 +139,12 @@ python test.py --directory ./my_test_photos
 python test.py --image photo.jpg --model_path ./my_trained_model
 ```
 
+## Documentation
+
+- **README.md** - This file (project overview and quick start)
+- **USER_GUIDE.md** - Complete step-by-step user guide with detailed instructions
+- **COMPREHENSIVE_RESULTS.md** - Detailed test results, comparisons, and analysis
+
 ## Project Structure
 
 ```
@@ -147,7 +153,8 @@ huggingface-image-project/
 ├── model_custom.py              # Create custom 5-class model
 ├── train.py                     # Training script
 ├── test.py                      # Testing script
-├── README.md                    # This file (main documentation)
+├── README.md                    # Main documentation (this file)
+├── USER_GUIDE.md                # Detailed user guide
 ├── COMPREHENSIVE_RESULTS.md     # Detailed results and analysis
 ├── .gitignore                   # Git ignore file
 ├── custom_vit_model/            # Created by model_custom.py (not in git)
@@ -159,10 +166,6 @@ huggingface-image-project/
     ├── my_house/
     └── my_phone/
 ```
-
-**Documentation**:
-- `README.md` - Main project documentation (this file)
-- `COMPREHENSIVE_RESULTS.md` - Detailed test results, comparisons, and analysis
 
 ## Complete Workflow
 

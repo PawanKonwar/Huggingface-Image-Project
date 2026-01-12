@@ -8,20 +8,20 @@ This document shows example predictions from the trained model.
 
 **Input Image**: `data/my_cat/cat.jpg`
 
-**Output**:
+**Output (Latest Training - 5 epochs)**:
 ```
 Predicted: my_cat
-Confidence: 79.58%
+Confidence: 94.61%
 
 All predictions:
-  1. my_cat          79.58% ███████████████████████░░░░░░░
-  2. my_dog           5.50% █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  3. my_phone         5.40% █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  4. my_car           5.31% █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  5. my_house         4.22% █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  1. my_cat          94.61% ████████████████████████████
+  2. my_phone         1.55% ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  3. my_house         1.34% ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  4. my_dog           1.31% ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  5. my_car           1.19% ░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-**Analysis**: The model correctly identified the cat image with high confidence (79.58%).
+**Analysis**: The model correctly identified the cat image with excellent confidence (94.61%) after retraining with 5 epochs. Confidence improved from 79.58% to 94.61%.
 
 ---
 
@@ -29,20 +29,20 @@ All predictions:
 
 **Input Image**: `data/my_dog/dog.jpg`
 
-**Output**:
+**Output (Latest Training - 5 epochs)**:
 ```
 Predicted: my_dog
-Confidence: 33.59%
+Confidence: 31.94%
 
 All predictions:
-  1. my_dog          33.59% ██████████░░░░░░░░░░░░░░░░░░░░
-  2. my_house        30.23% █████████░░░░░░░░░░░░░░░░░░░░░
-  3. my_cat          20.52% ██████░░░░░░░░░░░░░░░░░░░░░░░░
-  4. my_phone        10.49% ███░░░░░░░░░░░░░░░░░░░░░░░░░░░
-  5. my_car           5.17% █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  1. my_dog          31.94% █████████░░░░░░░░░░░░░░░░░░░░
+  2. my_house        30.24% █████████░░░░░░░░░░░░░░░░░░░░
+  3. my_cat          21.96% ██████░░░░░░░░░░░░░░░░░░░░░░░░
+  4. my_phone        10.52% ███░░░░░░░░░░░░░░░░░░░░░░░░░░░
+  5. my_car           5.34% █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ```
 
-**Analysis**: The model predicted "my_dog" correctly, though with lower confidence due to limited training data (only 1 image per class).
+**Analysis**: The model predicted "my_dog" correctly but with lower confidence (31.94%). This class needs more training data for better confidence.
 
 ---
 
@@ -96,12 +96,13 @@ All predictions:
 ## Training Statistics
 
 **Training Configuration**:
-- Epochs: 3
+- Epochs: 5 (latest training)
 - Batch Size: 1
 - Learning Rate: 2e-5
 - Training Samples: 4 images
 - Validation Samples: 1 image
-- Final Validation Accuracy: 100% (note: limited by small dataset)
+- Final Validation Accuracy: 100%
+- Training Loss: 0.18 (final), 0.89 (initial)
 
 **Note**: With only 1 image per class, the model has limited data to learn from. For production use, add 50-100+ images per class for better accuracy.
 

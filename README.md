@@ -143,20 +143,26 @@ python test.py --image photo.jpg --model_path ./my_trained_model
 
 ```
 huggingface-image-project/
-├── requirements.txt          # Dependencies
-├── model_custom.py          # Create custom 5-class model
-├── train.py                 # Training script
-├── test.py                  # Testing script
-├── README.md                # This file
-├── custom_vit_model/        # Created by model_custom.py
-├── trained_model/           # Created by train.py
-└── data/                    # Your training images
+├── requirements.txt              # Dependencies
+├── model_custom.py              # Create custom 5-class model
+├── train.py                     # Training script
+├── test.py                      # Testing script
+├── README.md                    # This file (main documentation)
+├── COMPREHENSIVE_RESULTS.md     # Detailed results and analysis
+├── .gitignore                   # Git ignore file
+├── custom_vit_model/            # Created by model_custom.py (not in git)
+├── trained_model/               # Created by train.py (not in git)
+└── data/                        # Your training images (not in git)
     ├── my_cat/
     ├── my_dog/
     ├── my_car/
     ├── my_house/
     └── my_phone/
 ```
+
+**Documentation**:
+- `README.md` - Main project documentation (this file)
+- `COMPREHENSIVE_RESULTS.md` - Detailed test results, comparisons, and analysis
 
 ## Complete Workflow
 
@@ -217,6 +223,32 @@ python test.py --image my_photo.jpg
 - PyTorch 2.0+
 - Transformers 4.30+
 - See `requirements.txt` for full list
+
+## Results
+
+See `COMPREHENSIVE_RESULTS.md` for:
+- Detailed test results on all images
+- Before/After customization comparison
+- Performance analysis and statistics
+- Class-wise breakdown and confidence scores
+
+**Quick Summary**:
+- Accuracy: 100% (5/5 correct predictions)
+- Average Confidence: 78.32%
+- High Confidence Classes: 4/5 (80%)
+
+## GitHub Repository
+
+This project is ready to push to GitHub:
+
+```bash
+# Create a new repository on GitHub, then:
+git remote add origin https://github.com/YOUR_USERNAME/huggingface-image-project.git
+git branch -M main
+git push -u origin main
+```
+
+**Note**: Model files (`custom_vit_model/`, `trained_model/`) and images (`data/`) are excluded via `.gitignore` (too large/private).
 
 ## License
 

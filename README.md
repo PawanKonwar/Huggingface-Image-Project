@@ -1,165 +1,157 @@
 # Hugging Face Image Classification Project
 
-Custom Vision Transformer (ViT) model fine-tuned for 5 specific classes using `google/vit-base-patch16-224`.
+Custom Vision Transformer (ViT) fine-tuned for **your own classes** using `google/vit-base-patch16-224`. A **dynamic framework** that supports **any number of classes**—no hardcoded labels.
 
 ## Overview
 
 This project:
-1. Uses the pre-trained `google/vit-base-patch16-224` model
-2. Modifies it from 1000 classes to 5 custom classes: **my_cat**, **my_dog**, **my_car**, **my_house**, **my_phone**
-3. Trains it on your custom image dataset
-4. Tests it on your own photos
 
-## Customization Explanation
+1. Uses the pre-trained **`google/vit-base-patch16-224`** model
+2. **Dynamically** infers classes by scanning `./data`: each subfolder name becomes a class (e.g. `my_cat`, `my_dog`, `my_car`, …)
+3. Modifies the model from 1000 ImageNet classes to **N** custom classes (N = number of subfolders)
+4. Trains on your images with augmentation, stratified train/val split, and frozen backbone
+5. Tests with **confidence scores**, **uncertainty detection**, and **prediction overlays**
+6. Provides a **Gradio web UI** for interactive inference
 
-### What Was Changed
+You can use 5 classes, 10 classes, or any number—just add one folder per class under `./data`.
 
-The base `google/vit-base-patch16-224` model is pre-trained on ImageNet with 1000 general classes (like "cat", "dog", "car", etc.). This project customizes it for 5 specific classes:
+## New Features
 
-**Before (Base Model):**
-- 1000 output classes (ImageNet categories)
-- Generic labels like "Egyptian cat", "golden retriever", "sports car"
-- Classifier head: `Linear(768, 1000)`
-
-**After (Custom Model):**
-- 5 output classes: `my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone`
-- Personalized labels for your specific objects
-- Classifier head: `Linear(768, 5)`
-
-### How It Works
-
-1. **Model Architecture Modification** (`model_custom.py`):
-   - Loads the pre-trained ViT model (weights preserved)
-   - Replaces the final classification layer from 1000 → 5 outputs
-   - Updates label mappings (`id2label`, `label2id`)
-   - Keeps all pre-trained feature extraction layers (transfer learning)
-
-2. **Fine-Tuning** (`train.py`):
-   - Freezes most layers, trains only the new classifier head
-   - Uses your custom images to learn class-specific features
-   - Adapts the model to recognize your specific objects
-
-3. **Key Benefits**:
-   - Leverages pre-trained features (no training from scratch)
-   - Fast training (only classifier head needs learning)
-   - Personalized for your specific objects
-   - Requires less data than training from scratch
-
-### Technical Details
-
-- **Base Model**: Vision Transformer (ViT) with patch size 16×16, 224×224 input
-- **Feature Dimension**: 768 (hidden size)
-- **Modification**: Final linear layer changed from `768 → 1000` to `768 → 5`
-- **Training**: Fine-tuning with custom dataset using Hugging Face Trainer
+- **Data augmentation** — Training uses `RandomResizedCrop(224)`, `RandomHorizontalFlip`, and `ColorJitter`. Validation uses deterministic `Resize(224, 224)` only. Transforms are applied in the dataset when loading each image.
+- **Stratified 80/20 train/val split** — Uses `sklearn.model_selection.train_test_split` with `stratify=labels` so train and validation keep the same class proportions. Split is done on file paths before building datasets.
+- **Confidence scores and uncertainty detection** — Inference applies softmax and reports **label: XX.X%**. When the top confidence is below 90%, the script prints the **top 2** classes and their percentages so you can see ambiguity.
+- **Gradio web UI** — Run `python main.py` for a browser interface: upload an image, get a **Label with Confidence Score** and an **Image with prediction overlay**. Example images from `data/` are preloaded for quick testing.
 
 ## Setup
 
-1. Install dependencies:
+Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ## Quick Start
 
-### Step 1: Create Custom Model
+### Step 1: Prepare your dataset
 
-Run the script to create a custom model with your 5 classes:
-```bash
-python model_custom.py
-```
+Organize images in one folder per class under `./data`. **Folder names = class names.**
 
-This creates a custom model in `./custom_vit_model` with 5 classes instead of 1000.
-
-**Your classes:**
-- my_cat
-- my_dog
-- my_car
-- my_house
-- my_phone
-
-### Step 2: Prepare Your Dataset
-
-Organize your images in this structure:
 ```
 data/
   my_cat/
     image1.jpg
-    image2.jpg
     ...
   my_dog/
-    image1.jpg
     ...
   my_car/
-    ...
   my_house/
-    ...
   my_phone/
-    ...
 ```
 
-**Important:**
-- Folder names must match the class names exactly: `my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone`
-- Use common formats: .jpg, .jpeg, .png, .bmp, .gif
-- Aim for at least 50-100 images per class for best results
-- The `data/` folder structure has been created for you - just add your images!
+Supported formats: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`. Add as many classes as you want.
 
-### Step 3: Train the Model
+### Step 2: Create the custom model
+
+This scans `./data` and builds a model with one output per class:
+
+```bash
+python model_custom.py
+```
+
+Creates `./custom_vit_model` with **N** classes (N = number of subfolders in `./data`). No code change needed when you add or remove classes.
+
+### Step 3: Train
 
 ```bash
 python train.py --data_dir ./data --epochs 5 --batch_size 8
 ```
 
-**Parameters:**
-- `--data_dir`: Directory with class subdirectories (default: `./data`)
-- `--model_path`: Path to custom model (default: `./custom_vit_model`)
-- `--output_dir`: Where to save trained model (default: `./trained_model`)
-- `--epochs`: Number of training epochs (default: 5)
-- `--batch_size`: Batch size (default: 8, reduce if out of memory)
-- `--learning_rate`: Learning rate (default: 2e-5)
+**Options:** `--data_dir`, `--model_path`, `--output_dir`, `--epochs`, `--batch_size`, `--learning_rate`. Training uses an 80% train / 20% validation stratified split and reports validation accuracy and per-class metrics at the end of each epoch.
 
-**Example with custom parameters:**
-```bash
-python train.py --data_dir ./data --epochs 10 --batch_size 16 --learning_rate 2e-5
-```
+### Step 4: Test (CLI)
 
-### Step 4: Test Your Photos
+**Single image (prints confidence, top-2 if uncertain, saves overlay):**
 
-**Single image:**
 ```bash
 python test.py --image my_photo.jpg
 ```
 
-**All images in a directory:**
+**Directory of images:**
+
 ```bash
 python test.py --directory ./my_test_photos
 ```
 
-**Use a different model:**
+**Custom overlay path:**
+
 ```bash
-python test.py --image photo.jpg --model_path ./my_trained_model
+python test.py --image photo.jpg --output result.jpg
 ```
+
+### Step 5: Test (Web UI)
+
+Launch the Gradio app (loads model from `./trained_model`):
+
+```bash
+python main.py
+```
+
+Open the URL shown in the terminal (e.g. http://127.0.0.1:7860). Upload an image to get:
+
+- **Label with Confidence Score** (e.g. `my_cat: 98.5%`)
+- **Image with prediction overlay** (label + confidence drawn on the image)
+
+Use the **Examples** (one image per class from `data/`) to try the model immediately.
+
+## Usage Summary
+
+| Command | Description |
+|--------|-------------|
+| `python model_custom.py` | Build custom model from `./data` class folders |
+| `python train.py [--data_dir ./data] [--epochs 5] ...` | Train with stratified 80/20 split |
+| `python test.py --image <path>` | Single-image test + overlay saved as `prediction_output.jpg` |
+| `python test.py --directory <dir>` | Batch test; confidence and top-2 when uncertain |
+| `python main.py` | Start Gradio web UI for interactive inference |
 
 ## Documentation
 
-- **README.md** - This file (project overview and quick start)
-- **USER_GUIDE.md** - Complete step-by-step user guide with detailed instructions
-- **COMPREHENSIVE_RESULTS.md** - Detailed test results, comparisons, and analysis
+- **README.md** — This file (overview, features, usage)
+- **USER_GUIDE.md** — Step-by-step guide and troubleshooting
+- **COMPREHENSIVE_RESULTS.md** — Test results and analysis
 
 ## Project Structure
 
 ```
 huggingface-image-project/
+├── main.py                      # Entry point (launches Gradio UI)
+├── app.py                       # Wrapper (backward-compatible: python app.py)
+├── model_custom.py              # Wrapper (backward-compatible: python model_custom.py)
+├── train.py                     # Wrapper (backward-compatible: python train.py)
+├── test.py                      # CLI testing (confidence, overlay, top-2)
 ├── requirements.txt              # Dependencies
-├── model_custom.py              # Create custom 5-class model
-├── train.py                     # Training script
-├── test.py                      # Testing script
-├── README.md                    # Main documentation (this file)
+├── src/                          # Modular code
+│   ├── __init__.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── inference.py        # Shared inference & overlay logic
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── model_custom.py    # Dynamic model creation (N classes from ./data)
+│   │   └── train.py           # Training (augmentation, stratified split, frozen backbone)
+│   ├── web/
+│   │   ├── __init__.py
+│   │   └── app.py             # Gradio UI (imports from src.api.inference)
+│   └── utils/
+│       ├── __init__.py
+│       ├── paths.py          # Project root/data/model path helpers
+│       └── download_images_loremflickr.py
+├── README.md                    # This file
 ├── USER_GUIDE.md                # Detailed user guide
-├── COMPREHENSIVE_RESULTS.md     # Detailed results and analysis
-├── .gitignore                   # Git ignore file
-├── custom_vit_model/            # Created by model_custom.py (not in git)
-├── trained_model/               # Created by train.py (not in git)
-└── data/                        # Your training images (not in git)
+├── COMPREHENSIVE_RESULTS.md     # Results and analysis
+├── .gitignore
+├── custom_vit_model/          # Created by model_custom.py (not in git)
+├── trained_model/             # Created by train.py (not in git)
+└── data/                      # Your images, one subfolder per class (not in git)
     ├── my_cat/
     ├── my_dog/
     ├── my_car/
@@ -170,90 +162,37 @@ huggingface-image-project/
 ## Complete Workflow
 
 ```bash
-# 1. Install dependencies
 pip install -r requirements.txt
-
-# 2. Create custom model
 python model_custom.py
-
-# 3. Add your images to data/ subdirectories
-#    - data/my_cat/your_cat_images.jpg
-#    - data/my_dog/your_dog_images.jpg
-#    - data/my_car/your_car_images.jpg
-#    - data/my_house/your_house_images.jpg
-#    - data/my_phone/your_phone_images.jpg
-
-# 4. Train the model
 python train.py --data_dir ./data --epochs 5
-
-# 5. Test your photos
 python test.py --image my_photo.jpg
+python main.py   # optional: web UI
 ```
 
-## Tips for Best Results
+## Customization (technical)
 
-- **More data = better accuracy**: Use at least 50-100 images per class
-- **Image quality**: Use clear, well-lit images
-- **Variety**: Include different angles, backgrounds, lighting conditions
-- **Batch size**: Reduce if you run out of memory (try 4 or 8)
-- **Epochs**: Start with 5, increase if validation accuracy is still improving
-- **Balance**: Try to have roughly equal number of images per class
+- **Base model:** `google/vit-base-patch16-224` (ViT, 224×224, 768-d)
+- **Change:** Final layer `Linear(768, 1000)` → `Linear(768, N)`; `id2label` / `label2id` from class names
+- **Training:** Backbone frozen; only the classification head is trained
+- **Data:** Stratified 80% train / 20% validation; training augmentation, validation resize-only
+
+## Tips
+
+- Use at least 50–100 images per class when possible
+- Keep similar proportions across classes for best stratified split
+- Reduce `--batch_size` (e.g. 4 or 8) if you run out of memory
 
 ## Troubleshooting
 
-**No images found:**
-- Check that your data directory structure matches the expected format
-- Verify folder names match exactly: `my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone`
-- Ensure images have supported extensions (.jpg, .png, etc.)
-
-**Out of memory:**
-- Reduce `--batch_size` (try 4 or 8)
-- Use smaller images or resize before training
-
-**Low accuracy:**
-- Add more training images per class
-- Ensure images are clear and representative
-- Try training for more epochs
-- Check that test images are similar to training data
-
-**Model not found:**
-- Make sure you've run `python model_custom.py` before training
-- Check that `./custom_vit_model` exists
+- **No images found** — Ensure `data/<class_name>/` exists and filenames use supported extensions.
+- **Model not found** — Run `python model_custom.py` first; then train so `./trained_model` exists before `test.py` or `main.py`.
+- **Out of memory** — Use a smaller `--batch_size` in `train.py`.
 
 ## Requirements
 
 - Python 3.8+
-- PyTorch 2.0+
-- Transformers 4.30+
-- See `requirements.txt` for full list
-
-## Results
-
-See `COMPREHENSIVE_RESULTS.md` for:
-- Detailed test results on all images
-- Before/After customization comparison
-- Performance analysis and statistics
-- Class-wise breakdown and confidence scores
-
-**Quick Summary**:
-- Accuracy: 100% (5/5 correct predictions)
-- Average Confidence: 78.32%
-- High Confidence Classes: 4/5 (80%)
-
-## GitHub Repository
-
-This project is ready to push to GitHub:
-
-```bash
-# Create a new repository on GitHub, then:
-git remote add origin https://github.com/YOUR_USERNAME/huggingface-image-project.git
-git branch -M main
-git push -u origin main
-```
-
-**Note**: Model files (`custom_vit_model/`, `trained_model/`) and images (`data/`) are excluded via `.gitignore` (too large/private).
+- See `requirements.txt` (PyTorch, Transformers, Gradio, scikit-learn, Pillow, etc.)
 
 ## License
 
 This project uses the `google/vit-base-patch16-224` model from Hugging Face.
-

@@ -57,6 +57,23 @@ python test.py --image your_image.jpg
 
 ---
 
+## Project Structure
+
+This project is organized into a top-level `src/` package (modular code) plus small wrappers at the root (for convenience/backward compatibility).
+
+Key files:
+
+```
+main.py                   # Entry point: launches the Gradio web UI
+src/api/inference.py      # Shared inference + overlay helpers
+src/models/model_custom.py
+src/models/train.py
+src/web/app.py            # Gradio UI implementation
+src/utils/download_images_loremflickr.py
+```
+
+---
+
 ## Detailed Step-by-Step Guide
 
 ### Step 1: Installation
@@ -351,6 +368,20 @@ python test.py --image photo.jpg --model_path ./my_custom_trained_model
 
 ---
 
+### Step 6: Test the Web UI (Gradio)
+
+Launch the Gradio app (loads the model from `./trained_model`):
+
+```bash
+python main.py
+```
+
+Open the URL shown in the terminal (typically `http://127.0.0.1:7860`) and upload an image to see:
+- The predicted label with confidence score
+- The image with a prediction overlay
+
+---
+
 ## Using the Scripts
 
 ### model_custom.py
@@ -437,6 +468,21 @@ python test.py --directory ./test_photos
 # Different model
 python test.py --image photo.jpg --model_path ./my_model
 ```
+
+---
+
+### main.py (Web UI entry point)
+
+**Purpose:** Launch the Gradio web interface for image classification.
+
+**Usage:**
+```bash
+python main.py
+```
+
+Notes:
+- The app loads the trained model from `./trained_model`.
+- You can also run `python app.py` if you prefer the backward-compatible wrapper, but `main.py` is the recommended entry point.
 
 ---
 

@@ -22,6 +22,12 @@ You can use 5 classes, 10 classes, or any number—just add one folder per class
 - **Confidence scores and uncertainty detection** — Inference applies softmax and reports **label: XX.X%**. When the top confidence is below 90%, the script prints the **top 2** classes and their percentages so you can see ambiguity.
 - **Gradio web UI** — Run `python main.py` for a browser interface: upload an image, get a **Label with Confidence Score** and an **Image with prediction overlay**. Example images from `data/` are preloaded for quick testing.
 
+## Model Performance
+
+After auditing the dataset, I removed roughly **~50 noisy images** from the `my_house` and `my_phone` folders. This cleaning step improved overall validation accuracy from about **51%** to about **80%**.
+
+With the cleaned dataset, the model’s **phone precision reached 1.0**, and the workflow transitioned into the **Gradio UI** for easier experimentation and quick visual checks.
+
 ## Setup
 
 Install dependencies:

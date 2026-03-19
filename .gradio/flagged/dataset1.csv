@@ -1,0 +1,2 @@
+Image,Label with Confidence Score,Image with prediction overlay,timestamp
+.gradio/flagged/Image/d11ff441219ea07463b0/cat.jpg,my_dog: 27.9%,.gradio/flagged/Image with prediction overlay/0fda40434f82eb0abb08/image.webp,2026-03-18 16:35:24.563113

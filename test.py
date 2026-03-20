@@ -47,7 +47,7 @@ def test_image(image_path, model_path=DEFAULT_MODEL_PATH, overlay_path='predicti
         print("\nTop 2 (uncertainty detected):")
         for i, (label, prob) in enumerate(top2, 1):
             print(f"  {i}. {label}: {prob * 100:.1f}%")
-    print(f"\nAll predictions:")
+    print("\nAll predictions:")
     all_probs = get_top_k_probs(probabilities, id2label, k=len(id2label))
     for i, (label, prob) in enumerate(all_probs, 1):
         bar_length = int(prob * 30)
@@ -95,9 +95,9 @@ if __name__ == "__main__":
                         help='Path to trained model')
     parser.add_argument('--output', type=str, default='prediction_output.jpg',
                         help='Output path for overlay image (single image only)')
-    
+
     args = parser.parse_args()
-    
+
     if args.image:
         test_image(args.image, args.model_path, overlay_path=args.output)
     elif args.directory:
@@ -105,4 +105,3 @@ if __name__ == "__main__":
     else:
         print("Please provide --image or --directory")
         parser.print_help()
-

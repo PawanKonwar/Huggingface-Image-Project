@@ -1,0 +1,33 @@
+name: ML CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  lint-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: |
+          flake8 src main.py test.py app.py \
+            --exclude=venv,.venv,__pycache__,trained_model,custom_vit_model \
+            --max-line-length=127 \
+            --extend-ignore=E203
+
+      - name: Smoke test (imports)
+        run: >
+          python -c "import torch; import transformers; from src.models.train import Trainer; assert Trainer is not None; print('Smoke test passed: torch, transformers, Trainer OK')"

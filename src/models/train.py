@@ -114,7 +114,7 @@ class ImageDataset(Dataset):
 def train(data_dir=None, model_path=None, output_dir=None,
           epochs=30, batch_size=8, learning_rate=2e-5):
     """Train the custom model."""
-    
+
     print("="*60)
     print("Training Custom Vision Transformer")
     print("="*60)
@@ -131,15 +131,15 @@ def train(data_dir=None, model_path=None, output_dir=None,
     # When unfreezing transformer layers, use a smaller LR to avoid destroying
     # already-learned representations for the backbone.
     learning_rate = min(float(learning_rate), 2e-5)
-    
+
     # Load model
     print(f"\nLoading model from {model_path}...")
     processor = ViTImageProcessor.from_pretrained(model_path)
     model = ViTForImageClassification.from_pretrained(model_path)
-    
+
     class_names = [model.config.id2label[i] for i in range(model.config.num_labels)]
     print(f"Classes: {class_names}")
-    
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Device: {device}")
     model.to(device)
@@ -192,7 +192,7 @@ def train(data_dir=None, model_path=None, output_dir=None,
         pixel_values = torch.stack([item['pixel_values'] for item in batch])
         labels = torch.stack([item['labels'] for item in batch])
         return {'pixel_values': pixel_values, 'labels': labels}
-    
+
     # Training arguments (dataloader_drop_last=False so last small batch does not crash training)
     training_args = TrainingArguments(
         output_dir=output_dir_str,
@@ -210,14 +210,14 @@ def train(data_dir=None, model_path=None, output_dir=None,
         load_best_model_at_end=True,
         metric_for_best_model="accuracy",
     )
-    
+
     # Compute metrics
     def compute_metrics(eval_pred):
         predictions, labels = eval_pred
         predictions = predictions.argmax(axis=-1)
         accuracy = (predictions == labels).astype(float).mean()
         return {'accuracy': accuracy}
-    
+
     # Create trainer
     trainer = Trainer(
         model=model,
@@ -227,14 +227,14 @@ def train(data_dir=None, model_path=None, output_dir=None,
         data_collator=collate_fn,
         compute_metrics=compute_metrics,
     )
-    
+
     # Train
-    print(f"\nStarting training...")
+    print("\nStarting training...")
     print(f"Epochs: {epochs}, Batch size: {batch_size}, LR: {learning_rate}")
     print("-"*60)
-    
+
     trainer.train()
-    
+
     # Evaluate
     print("\nEvaluating...")
     eval_results = trainer.evaluate()
@@ -252,7 +252,7 @@ def train(data_dir=None, model_path=None, output_dir=None,
     print(f"\nSaving model to {output_dir_str}...")
     trainer.save_model()
     processor.save_pretrained(output_dir_str)
-    
+
     print("\n" + "="*60)
     print("Training completed!")
     print("="*60)
@@ -260,7 +260,7 @@ def train(data_dir=None, model_path=None, output_dir=None,
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Train custom Vision Transformer')
     parser.add_argument('--data_dir', type=str, default=None,
                         help='Directory with class subdirectories')
@@ -271,9 +271,9 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=30, help='Number of epochs')
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size')
     parser.add_argument('--learning_rate', type=float, default=2e-5, help='Learning rate (will be capped at 2e-5)')
-    
+
     args = parser.parse_args()
-    
+
     train(
         data_dir=args.data_dir,
         model_path=args.model_path,
@@ -282,4 +282,3 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         learning_rate=args.learning_rate
     )
-

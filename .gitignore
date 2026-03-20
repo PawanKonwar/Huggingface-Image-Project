@@ -26,7 +26,7 @@ data/**/*.jpeg
 data/**/*.png
 data/**/*.bmp
 data/**/*.gif
-
+data/
 # IDE
 .vscode/
 .idea/

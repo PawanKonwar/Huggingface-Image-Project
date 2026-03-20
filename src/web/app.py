@@ -57,6 +57,7 @@ demo = gr.Interface(
     examples=examples,
 )
 
+
 def launch():
     demo.launch()
 

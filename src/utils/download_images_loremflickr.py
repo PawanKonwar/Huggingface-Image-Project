@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.utils.paths import DATA_DIR
+from src.utils.paths import DATA_DIR  # noqa: E402
 
 classes = {
     "my_cat": "cat",
@@ -41,6 +41,7 @@ PAUSE_BETWEEN_SUCCESSFUL_DOWNLOADS = 0.5  # tiny delay to reduce rate-limit risk
 
 # Supported extensions for counting/verifying images.
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
+
 
 def _count_images(class_dir: Path) -> int:
     if not class_dir.exists():
@@ -139,6 +140,7 @@ def top_up_class(class_name: str, query: str) -> None:
             print(f"Skipped index after {MAX_RETRIES_PER_IMAGE} failed attempts: {class_name}_{next_idx}")
             next_idx += 1
             lock += 1
+
 
 def main() -> None:
     # User-requested classes to balance (but we also safely check any class < MIN_IMAGES).

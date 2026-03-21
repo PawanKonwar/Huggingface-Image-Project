@@ -1,0 +1,7 @@
+{
+  "eval_accuracy": 0.7959183673469388,
+  "val_samples": 49,
+  "train_samples": 193,
+  "random_state": 42,
+  "stratify": true
+}

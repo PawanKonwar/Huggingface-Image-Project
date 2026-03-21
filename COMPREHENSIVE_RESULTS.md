@@ -1,371 +1,114 @@
-# Comprehensive Model Results and Comparison
+# Comprehensive Model Results
 
-## Project Overview
+This document matches **on-disk data** under `./data/` and the exported metrics in `./results/` (produced at the end of `python train.py`).
 
-This document provides detailed results, comparisons, and analysis of the custom Vision Transformer model fine-tuned for 5 specific classes.
+## Project overview
 
-**Model**: `google/vit-base-patch16-224` → Custom 5-class model  
-**Classes**: `my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone`  
-**Training Date**: Model trained and tested  
-**Training Images**: 5 images (1 per class)
-
----
-
-## Table of Contents
-
-1. [Model Customization Summary](#model-customization-summary)
-2. [Training Details](#training-details)
-3. [Test Results - All Images](#test-results---all-images)
-4. [Before vs After Comparison](#before-vs-after-comparison)
-5. [Performance Analysis](#performance-analysis)
-6. [Class-wise Breakdown](#class-wise-breakdown)
+| Item | Value |
+|------|--------|
+| **Base checkpoint** | `google/vit-base-patch16-224` |
+| **Custom classes** | `my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone` |
+| **Train / validation split** | 80% / 20%, stratified, `random_state=42` (`sklearn.model_selection.train_test_split`) |
+| **Validation accuracy (Trainer)** | **79.59%** (`eval_accuracy` in `results/eval_summary.json`: `0.795918…`) |
+| **Reported accuracy (sklearn)** | **80%** (two-decimal rounding on the same 49 validation samples) |
 
 ---
 
-## Model Customization Summary
+## Data audit (house vs. dog label confusion)
 
-### What Changed
+Several downloaded or scraped images **mixed visual cues** between **`my_house`** and **`my_dog`**: e.g. dogs in front of buildings, wide outdoor facades that looked pet-centric thumbnails, or house exteriors tagged loosely as “animal” scenes. That **label noise** inflated confusion between the two classes and hurt validation metrics until the folders were manually reviewed.
 
-| Aspect | Before (Base Model) | After (Custom Model) |
-|--------|-------------------|---------------------|
-| **Output Classes** | 1000 ImageNet classes | 5 custom classes |
-| **Classifier Head** | `Linear(768, 1000)` | `Linear(768, 5)` |
-| **Labels** | Generic (e.g., "Egyptian cat", "sports car") | Personalized (`my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone`) |
-| **Feature Layers** | Pre-trained ViT encoder (preserved) | Pre-trained ViT encoder (preserved) |
-| **Training Required** | None (pre-trained) | Fine-tuning on custom data |
+**What we did**
 
-### Technical Details
+- Opened suspect files in `data/my_house/` and `data/my_dog/` and **removed or re-filed** mislabeled examples.
+- Applied the same discipline to **`my_phone`** and **`my_house`** buckets (removing off-topic or broken downloads), which previously helped lift accuracy from roughly **~51%** to **~80%** on validation before the current dataset size.
 
-- **Base Architecture**: Vision Transformer (ViT-Base)
-- **Patch Size**: 16×16 pixels
-- **Input Size**: 224×224 pixels
-- **Hidden Dimension**: 768
-- **Method**: Transfer Learning (frozen encoder + trainable classifier)
+After cleanup, counts are closer to balanced across most classes; `my_house` and `my_phone` remain somewhat smaller (see tables below).
 
 ---
 
-## Training Details
+## Dataset inventory (actual `./data/` counts)
 
-### Training Configuration
+These counts are the **number of image files** per class (extensions: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`). They are mirrored in `results/dataset_split.csv`.
 
-```yaml
-Model: Custom ViT (5 classes)
-Epochs: 5
-Batch Size: 1
-Learning Rate: 2e-5
-Weight Decay: 0.01
-Device: CPU
-Train/Val Split: 80/20
-```
+| Class | Images on disk |
+|-------|----------------|
+| my_car | 60 |
+| my_cat | 60 |
+| my_dog | 60 |
+| my_house | 46 |
+| my_phone | 16 |
+| **Total** | **242** |
 
-### Dataset Statistics
+### `my_phone` and the “13 images” note
 
-| Class | Training Images | Validation Images | Total |
-|-------|----------------|------------------|-------|
-| my_cat | 1 | 0 | 1 |
-| my_dog | 0 | 1 | 1 |
-| my_car | 1 | 0 | 1 |
-| my_house | 1 | 0 | 1 |
-| my_phone | 1 | 0 | 1 |
-| **Total** | **4** | **1** | **5** |
-
-### Training Progress
-
-- **Initial Loss**: ~0.89
-- **Final Loss**: 0.18
-- **Loss Reduction**: 80% improvement
-- **Training Time**: ~5.4 seconds
-- **Validation Accuracy**: 100% (on 1 validation image)
+- There are **16** curated phone images in **`data/my_phone/`** in this repository snapshot.
+- With the stratified **80/20** split and **`random_state=42`**, **13** of those 16 are assigned to **training** and **3** to **validation** (see next table). So “13” corresponds to **training samples for `my_phone`**, not the folder count.
 
 ---
 
-## Test Results - All Images
+## Stratified split sizes (matches `train.py`)
 
-### 1. Cat Image (`data/my_cat/cat.jpg`)
+Same numbers as `results/dataset_split.csv` (generated automatically when you train).
 
-**Prediction Result:**
-```
-Predicted Class: my_cat
-Confidence: 94.61%
-
-Probability Distribution:
-┌─────────────┬───────────┬─────────────────────────────────────┐
-│ Rank │ Class      │ Probability │ Visual Bar                    │
-├──────┼────────────┼─────────────┼─────────────────────────────┤
-│  1   │ my_cat     │   94.61%    │ ████████████████████████████│
-│  2   │ my_phone   │    1.55%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  3   │ my_house   │    1.34%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  4   │ my_dog     │    1.31%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  5   │ my_car     │    1.19%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-└──────┴────────────┴─────────────┴─────────────────────────────┘
-```
-
-**Analysis**: ✅ Excellent prediction with very high confidence (94.61%). The model clearly distinguishes the cat image from other classes.
+| Class | Total | Train | Validation |
+|-------|------:|------:|-----------:|
+| my_car | 60 | 48 | 12 |
+| my_cat | 60 | 48 | 12 |
+| my_dog | 60 | 48 | 12 |
+| my_house | 46 | 36 | 10 |
+| my_phone | 16 | 13 | 3 |
+| **ALL** | **242** | **193** | **49** |
 
 ---
 
-### 2. Dog Image (`data/my_dog/dog.jpg`)
+## Validation metrics (per class)
 
-**Prediction Result:**
-```
-Predicted Class: my_dog
-Confidence: 31.94%
+Values below are from a full training run (default **30 epochs**, batch size **8**, capped LR **2e-5**), matching the sklearn `classification_report` printed by `src/models/train.py` and saved to **`results/validation_per_class.csv`**.
 
-Probability Distribution:
-┌─────────────┬───────────┬─────────────────────────────────────┐
-│ Rank │ Class      │ Probability │ Visual Bar                    │
-├──────┼────────────┼─────────────┼─────────────────────────────┤
-│  1   │ my_dog     │   31.94%    │ █████████░░░░░░░░░░░░░░░░░░░│
-│  2   │ my_house   │   30.24%    │ █████████░░░░░░░░░░░░░░░░░░░│
-│  3   │ my_cat     │   21.96%    │ ██████░░░░░░░░░░░░░░░░░░░░░░│
-│  4   │ my_phone   │   10.52%    │ ███░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  5   │ my_car     │    5.34%    │ █░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-└──────┴────────────┴─────────────┴─────────────────────────────┘
-```
+| Class | Precision | Recall | F1-score | Support |
+|-------|-----------|--------|----------|--------:|
+| my_car | 0.78 | 0.58 | 0.67 | 12 |
+| my_cat | 0.86 | 1.00 | 0.92 | 12 |
+| my_dog | 0.82 | 0.75 | 0.78 | 12 |
+| my_house | 0.77 | 1.00 | 0.87 | 10 |
+| my_phone | 0.50 | 0.33 | 0.40 | 3 |
+| **macro avg** | **0.74** | **0.73** | **0.73** | 49 |
+| **weighted avg** | **0.79** | **0.80** | **0.78** | 49 |
 
-**Analysis**: ⚠️ Correct prediction but with lower confidence (31.94%). The model shows uncertainty, with similar probabilities for `my_dog` and `my_house`. This suggests the model needs more training data, especially for distinguishing dogs from houses.
+**Interpretation**
+
+- **`my_phone`** has only **3** validation images, so precision/recall **swing heavily** with a single mistake. Treat phone metrics as **high-variance** unless you add more phone images or use k-fold / more val data.
+- **`my_cat`** / **`my_house`** show strong recall on this split; **`my_car`** recall is lower—worth checking remaining confusion pairs (car vs. house façade, etc.).
 
 ---
 
-### 3. Car Image (`data/my_car/car.jpg`)
+## Where the numbers live in the repo
 
-**Prediction Result:**
-```
-Predicted Class: my_car
-Confidence: 92.32%
+| Path | Purpose |
+|------|---------|
+| `results/dataset_split.csv` | Per-class and total train/val counts |
+| `results/validation_per_class.csv` | Per-class precision, recall, F1, support + averages |
+| `results/eval_summary.json` | `eval_accuracy`, sample counts, split metadata |
+| `src/models/train.py` | Writes the above files after each training run |
 
-Probability Distribution:
-┌─────────────┬───────────┬─────────────────────────────────────┐
-│ Rank │ Class      │ Probability │ Visual Bar                    │
-├──────┼────────────┼─────────────┼─────────────────────────────┤
-│  1   │ my_car     │   92.32%    │ ███████████████████████████░│
-│  2   │ my_house   │    2.87%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  3   │ my_cat     │    2.02%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  4   │ my_phone   │    1.68%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  5   │ my_dog     │    1.11%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-└──────┴────────────┴─────────────┴─────────────────────────────┘
-```
-
-**Analysis**: ✅ Excellent prediction with very high confidence (92.32%). The model clearly recognizes the car image.
-
----
-
-### 4. House Image (`data/my_house/house.jpg`)
-
-**Prediction Result:**
-```
-Predicted Class: my_house
-Confidence: 83.54%
-
-Probability Distribution:
-┌─────────────┬───────────┬─────────────────────────────────────┐
-│ Rank │ Class      │ Probability │ Visual Bar                    │
-├──────┼────────────┼─────────────┼─────────────────────────────┤
-│  1   │ my_house   │   83.54%    │ █████████████████████████░░░│
-│  2   │ my_dog     │    4.94%    │ █░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  3   │ my_cat     │    4.73%    │ █░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  4   │ my_phone   │    3.72%    │ █░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  5   │ my_car     │    3.07%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-└──────┴────────────┴─────────────┴─────────────────────────────┘
-```
-
-**Analysis**: ✅ Good prediction with high confidence (83.54%). The model clearly identifies the house.
-
----
-
-### 5. Phone Image (`data/my_phone/phone.jpg`)
-
-**Prediction Result:**
-```
-Predicted Class: my_phone
-Confidence: 89.21%
-
-Probability Distribution:
-┌─────────────┬───────────┬─────────────────────────────────────┐
-│ Rank │ Class      │ Probability │ Visual Bar                    │
-├──────┼────────────┼─────────────┼─────────────────────────────┤
-│  1   │ my_phone   │   89.21%    │ ██████████████████████████░░│
-│  2   │ my_house   │    3.57%    │ █░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  3   │ my_cat     │    3.11%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  4   │ my_car     │    2.28%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-│  5   │ my_dog     │    1.83%    │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
-└──────┴────────────┴─────────────┴─────────────────────────────┘
-```
-
-**Analysis**: ✅ Excellent prediction with very high confidence (89.21%). The model clearly recognizes the phone.
-
----
-
-## Before vs After Comparison
-
-### Base Model (1000 Classes) - Hypothetical Output
-
-If we used the original `google/vit-base-patch16-224` model on a cat image:
-
-```
-Top 5 Predictions (Example):
-  1. Egyptian cat          45.23%
-  2. tabby cat             12.45%
-  3. tiger cat              8.32%
-  4. Persian cat            5.12%
-  5. Siamese cat            3.89%
-  
-  ... (995 more classes with low probabilities)
-```
-
-**Issues**:
-- ❌ Generic ImageNet categories
-- ❌ 1000 classes (too many, most irrelevant)
-- ❌ Can't recognize personalized objects
-- ❌ No distinction between "your cat" vs "your dog" vs "your car"
-
-### Custom Model (5 Classes) - Actual Output
-
-Using our custom model on the same cat image:
-
-```
-Prediction:
-  1. my_cat                94.61%  ✅
-  2. my_phone               1.55%
-  3. my_house               1.34%
-  4. my_dog                 1.31%
-  5. my_car                 1.19%
-```
-
-**Benefits**:
-- ✅ Personalized to your 5 specific classes
-- ✅ High confidence on correct predictions
-- ✅ Clear distinction between your objects
-- ✅ Simple, focused output
-- ✅ Fast inference (only 5 classes to evaluate)
-
----
-
-## Performance Analysis
-
-### Overall Statistics
-
-| Metric | Value |
-|--------|-------|
-| **Total Test Images** | 5 |
-| **Correct Predictions** | 5 (100%) |
-| **Average Confidence** | 78.32% |
-| **High Confidence (>80%)** | 4/5 (80%) |
-| **Medium Confidence (50-80%)** | 0/5 (0%) |
-| **Low Confidence (<50%)** | 1/5 (20%) |
-
-### Confidence Distribution
-
-```
-Class Performance:
-┌──────────────┬──────────────┬──────────┬─────────────┐
-│ Class        │ Confidence   │ Status   │ Rank        │
-├──────────────┼──────────────┼──────────┼─────────────┤
-│ my_cat       │   94.61%     │ ✅ Excellent │ 1st      │
-│ my_car       │   92.32%     │ ✅ Excellent │ 2nd      │
-│ my_phone     │   89.21%     │ ✅ Excellent │ 3rd      │
-│ my_house     │   83.54%     │ ✅ Good      │ 4th      │
-│ my_dog       │   31.94%     │ ⚠️  Low      │ 5th      │
-└──────────────┴──────────────┴──────────┴─────────────┘
-
-Average Confidence: 78.32%
-Median Confidence: 89.21%
-```
-
----
-
-## Class-wise Breakdown
-
-### Summary Table
-
-| Test Image | True Class | Predicted Class | Confidence | Correct? |
-|------------|-----------|----------------|------------|----------|
-| cat.jpg | my_cat | my_cat | 94.61% | ✅ Yes |
-| dog.jpg | my_dog | my_dog | 31.94% | ✅ Yes |
-| car.jpg | my_car | my_car | 92.32% | ✅ Yes |
-| house.jpg | my_house | my_house | 83.54% | ✅ Yes |
-| phone.jpg | my_phone | my_phone | 89.21% | ✅ Yes |
-
-**Accuracy: 100% (5/5 correct predictions)**
-
-### Confidence Scores Analysis
-
-```
-High Confidence (>80%):
-├── my_cat:     94.61%  ████████████████████████████
-├── my_car:     92.32%  ███████████████████████████
-├── my_phone:   89.21%  ██████████████████████████
-└── my_house:   83.54%  ███████████████████████
-
-Low Confidence (<50%):
-└── my_dog:     31.94%  █████████
-```
-
----
-
-## Key Insights
-
-### Strengths ✅
-
-1. **High Accuracy**: 100% correct predictions on all test images
-2. **Excellent Performance on 4/5 Classes**: 4 classes show >80% confidence
-3. **Clear Class Separation**: Most classes are well-distinguished
-4. **Fast Training**: Model trained in ~5 seconds
-5. **Effective Transfer Learning**: Pre-trained features work well for custom classes
-
-### Areas for Improvement ⚠️
-
-1. **Dog Classification**: Lower confidence (31.94%) - needs more training data
-2. **Limited Training Data**: Only 1 image per class
-3. **Potential Overfitting**: Model trained on very small dataset
-
-### Recommendations
-
-1. **Add More Training Data**: 
-   - Aim for 50-100+ images per class
-   - Include variety (angles, lighting, backgrounds)
-   
-2. **Data Augmentation**:
-   - Rotations, flips, brightness adjustments
-   - Helps prevent overfitting
-   
-3. **Balanced Dataset**:
-   - Ensure roughly equal images per class
-   - Helps model learn balanced features
-
-4. **More Training Epochs**:
-   - Increase to 10-20 epochs with more data
-   - Monitor validation loss to prevent overfitting
-
----
-
-## Conclusion
-
-The custom Vision Transformer model successfully:
-- ✅ Modified from 1000 to 5 classes
-- ✅ Trained on custom dataset
-- ✅ Achieved 100% accuracy on test set
-- ✅ Shows high confidence on 4/5 classes
-
-The model is **production-ready** for the 5-class classification task, though adding more training data will improve confidence, especially for the dog class.
-
----
-
-## Usage
-
-To test your own images:
+To refresh all metrics after changing data or hyperparameters:
 
 ```bash
-# Single image
-python test.py --image your_image.jpg
-
-# Directory of images
-python test.py --directory ./test_images
+python model_custom.py   # if classes/counts changed
+python train.py
 ```
 
 ---
 
-*Generated: Model Training and Evaluation Report*  
-*Model: Custom ViT (5 classes)*  
-*Base: google/vit-base-patch16-224*
+## CLI smoke checks
 
+```bash
+python test.py --image path/to/image.jpg
+python test.py --directory ./some_folder
+python main.py   # Gradio UI
+```
+
+---
+
+*Last aligned with exported `results/*` and `data/` layout as documented above.*

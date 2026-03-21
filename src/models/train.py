@@ -2,17 +2,24 @@
 Training script for fine-tuning the custom Vision Transformer model.
 """
 
+import csv
+import json
 import torch
+from collections import Counter
 from pathlib import Path
 
 from PIL import Image
-from sklearn.metrics import classification_report
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    precision_recall_fscore_support,
+)
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torchvision import transforms
 from transformers import ViTImageProcessor, ViTForImageClassification, TrainingArguments, Trainer
 
-from src.utils.paths import CUSTOM_MODEL_DIR, DATA_DIR, TRAINED_MODEL_DIR
+from src.utils.paths import CUSTOM_MODEL_DIR, DATA_DIR, RESULTS_DIR, TRAINED_MODEL_DIR
 
 
 def _collect_paths_and_labels(data_dir, class_names):
@@ -171,6 +178,20 @@ def train(data_dir=None, model_path=None, output_dir=None,
         random_state=42,
     )
 
+    # Persist dataset split counts for README / results docs (matches stratified 80/20, random_state=42)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    split_csv = RESULTS_DIR / "dataset_split.csv"
+    train_ct = Counter(train_labels)
+    val_ct = Counter(val_labels)
+    with split_csv.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["class", "total_images", "train_images", "val_images"])
+        for idx, name in enumerate(class_names):
+            tr = train_ct.get(idx, 0)
+            va = val_ct.get(idx, 0)
+            w.writerow([name, tr + va, tr, va])
+        w.writerow(["ALL", len(all_paths), len(train_labels), len(val_labels)])
+
     train_dataset = ImageDataset(
         processor, class_names, mode='train',
         image_paths=train_paths, labels=train_labels,
@@ -244,9 +265,48 @@ def train(data_dir=None, model_path=None, output_dir=None,
     pred_output = trainer.predict(val_dataset)
     pred_labels = pred_output.predictions.argmax(axis=-1)
     true_labels = pred_output.label_ids
-    class_names = [model.config.id2label[i] for i in range(model.config.num_labels)]
+    class_names_eval = [model.config.id2label[i] for i in range(model.config.num_labels)]
     print("\nPer-class metrics (validation set):")
-    print(classification_report(true_labels, pred_labels, target_names=class_names))
+    print(classification_report(true_labels, pred_labels, target_names=class_names_eval))
+
+    # Export validation metrics to results/ (source of truth for docs and CI snapshots)
+    labels_idx = list(range(len(class_names_eval)))
+    prec, rec, f1, sup = precision_recall_fscore_support(
+        true_labels,
+        pred_labels,
+        labels=labels_idx,
+        zero_division=0,
+    )
+    val_acc = float(eval_results.get("eval_accuracy", accuracy_score(true_labels, pred_labels)))
+    metrics_csv = RESULTS_DIR / "validation_per_class.csv"
+    with metrics_csv.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["class", "precision", "recall", "f1_score", "support"])
+        for i, name in enumerate(class_names_eval):
+            w.writerow([name, f"{prec[i]:.4f}", f"{rec[i]:.4f}", f"{f1[i]:.4f}", int(sup[i])])
+        p_ma, r_ma, f_ma, _ = precision_recall_fscore_support(
+            true_labels, pred_labels, average="macro", zero_division=0
+        )
+        p_wa, r_wa, f_wa, _ = precision_recall_fscore_support(
+            true_labels, pred_labels, average="weighted", zero_division=0
+        )
+        w.writerow(["macro_avg", f"{p_ma:.4f}", f"{r_ma:.4f}", f"{f_ma:.4f}", len(true_labels)])
+        w.writerow(["weighted_avg", f"{p_wa:.4f}", f"{r_wa:.4f}", f"{f_wa:.4f}", len(true_labels)])
+    summary_path = RESULTS_DIR / "eval_summary.json"
+    summary_path.write_text(
+        json.dumps(
+            {
+                "eval_accuracy": val_acc,
+                "val_samples": len(val_labels),
+                "train_samples": len(train_labels),
+                "random_state": 42,
+                "stratify": True,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    print(f"\nWrote metrics to {metrics_csv} and {summary_path}")
 
     # Save model
     print(f"\nSaving model to {output_dir_str}...")

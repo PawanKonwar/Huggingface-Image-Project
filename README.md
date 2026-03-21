@@ -9,7 +9,7 @@ This project:
 1. Uses the pre-trained **`google/vit-base-patch16-224`** model
 2. **Dynamically** infers classes by scanning `./data`: each subfolder name becomes a class (e.g. `my_cat`, `my_dog`, `my_car`, …)
 3. Modifies the model from 1000 ImageNet classes to **N** custom classes (N = number of subfolders)
-4. Trains on your images with augmentation, stratified train/val split, and frozen backbone
+4. Trains on your images with augmentation, stratified train/val split, and a **mostly frozen** ViT (classifier + last two encoder blocks trainable)
 5. Tests with **confidence scores**, **uncertainty detection**, and **prediction overlays**
 6. Provides a **Gradio web UI** for interactive inference
 
@@ -24,9 +24,37 @@ You can use 5 classes, 10 classes, or any number—just add one folder per class
 
 ## Model Performance
 
-After auditing the dataset, I removed roughly **~50 noisy images** from the `my_house` and `my_phone` folders. This cleaning step improved overall validation accuracy from about **51%** to about **80%**.
+Metrics below are tied to the **current `./data/` layout** and the files in **`./results/`**, which are **rewritten automatically** when you run `python train.py` (see `src/models/train.py`).
 
-With the cleaned dataset, the model’s **phone precision reached 1.0**, and the workflow transitioned into the **Gradio UI** for easier experimentation and quick visual checks.
+| Metric (validation) | Value | Source |
+|---------------------|------:|--------|
+| **Trainer `eval_accuracy`** | **79.59%** | `results/eval_summary.json` |
+| **sklearn `classification_report` accuracy** | **80%** (rounded) | `results/validation_per_class.csv` / training log |
+| **Macro F1** | **0.73** | `results/validation_per_class.csv` |
+| **Weighted F1** | **0.78** | `results/validation_per_class.csv` |
+
+After an earlier **data audit**, removing noisy examples (especially in `my_house` / `my_phone`) helped lift validation accuracy from about **~51%** into the **~80%** band on the curated set. The latest logged run lands at **79.59%** on **49** validation images (stratified 80/20, `random_state=42`).
+
+**Gradio UI** — run `python main.py` for quick visual checks on new photos.
+
+### Data audit (house vs. dog)
+
+Some scraped images **confused `my_house` and `my_dog`** (dogs framed against buildings, ambiguous outdoor shots, or houses labeled like pet thumbnails). Manually **removing or re-homing** those files reduced label noise and stabilized metrics. See **`COMPREHENSIVE_RESULTS.md`** for the full narrative and tables.
+
+### Dataset size snapshot (this repo)
+
+Counts are **image files per folder** under `./data/` (also in `results/dataset_split.csv`):
+
+| Class | Images |
+|-------|-------:|
+| my_car | 60 |
+| my_cat | 60 |
+| my_dog | 60 |
+| my_house | 46 |
+| my_phone | 16 |
+| **Total** | **242** |
+
+**Note on `my_phone`:** the folder holds **16** images. With the stratified split above, **13** are used for **training** and **3** for **validation**—so “13” matches the **training** count for phones, not the on-disk total.
 
 ## Setup
 
@@ -69,10 +97,10 @@ Creates `./custom_vit_model` with **N** classes (N = number of subfolders in `./
 ### Step 3: Train
 
 ```bash
-python train.py --data_dir ./data --epochs 5 --batch_size 8
+python train.py --data_dir ./data --epochs 30 --batch_size 8
 ```
 
-**Options:** `--data_dir`, `--model_path`, `--output_dir`, `--epochs`, `--batch_size`, `--learning_rate`. Training uses an 80% train / 20% validation stratified split and reports validation accuracy and per-class metrics at the end of each epoch.
+**Options:** `--data_dir`, `--model_path`, `--output_dir`, `--epochs`, `--batch_size`, `--learning_rate`. Training uses an 80% train / 20% validation stratified split, logs validation accuracy each epoch, prints a per-class **`classification_report`** at the end, and writes **`results/dataset_split.csv`**, **`results/validation_per_class.csv`**, and **`results/eval_summary.json`**.
 
 ### Step 4: Test (CLI)
 
@@ -114,7 +142,7 @@ Use the **Examples** (one image per class from `data/`) to try the model immedia
 | Command | Description |
 |--------|-------------|
 | `python model_custom.py` | Build custom model from `./data` class folders |
-| `python train.py [--data_dir ./data] [--epochs 5] ...` | Train with stratified 80/20 split |
+| `python train.py [--data_dir ./data] [--epochs 30] ...` | Train; exports metrics under `./results/` |
 | `python test.py --image <path>` | Single-image test + overlay saved as `prediction_output.jpg` |
 | `python test.py --directory <dir>` | Batch test; confidence and top-2 when uncertain |
 | `python main.py` | Start Gradio web UI for interactive inference |
@@ -123,7 +151,7 @@ Use the **Examples** (one image per class from `data/`) to try the model immedia
 
 - **README.md** — This file (overview, features, usage)
 - **USER_GUIDE.md** — Step-by-step guide and troubleshooting
-- **COMPREHENSIVE_RESULTS.md** — Test results and analysis
+- **COMPREHENSIVE_RESULTS.md** — Dataset counts, audit notes, validation metrics (aligned with `./results/`)
 
 ## Project Structure
 
@@ -153,7 +181,8 @@ huggingface-image-project/
 │       └── download_images_loremflickr.py
 ├── README.md                    # This file
 ├── USER_GUIDE.md                # Detailed user guide
-├── COMPREHENSIVE_RESULTS.md     # Results and analysis
+├── COMPREHENSIVE_RESULTS.md     # Results and analysis (tables ↔ ./results/)
+├── results/                     # dataset_split.csv, validation_per_class.csv, eval_summary.json (from train.py)
 ├── .gitignore
 ├── custom_vit_model/          # Created by model_custom.py (not in git)
 ├── trained_model/             # Created by train.py (not in git)
@@ -170,7 +199,7 @@ huggingface-image-project/
 ```bash
 pip install -r requirements.txt
 python model_custom.py
-python train.py --data_dir ./data --epochs 5
+python train.py --data_dir ./data --epochs 30
 python test.py --image my_photo.jpg
 python main.py   # optional: web UI
 ```
@@ -179,7 +208,7 @@ python main.py   # optional: web UI
 
 - **Base model:** `google/vit-base-patch16-224` (ViT, 224×224, 768-d)
 - **Change:** Final layer `Linear(768, 1000)` → `Linear(768, N)`; `id2label` / `label2id` from class names
-- **Training:** Backbone frozen; only the classification head is trained
+- **Training:** Most of the ViT backbone is frozen; the **classifier** and **last two encoder layers** are trainable (see `src/models/train.py`)
 - **Data:** Stratified 80% train / 20% validation; training augmentation, validation resize-only
 
 ## Tips

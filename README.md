@@ -1,4 +1,4 @@
-# Hugging Face Image Classification Project
+[![ML CI](https://github.com/PawanKonwar/Huggingface-Image-Project/actions/workflows/ml_ci.yml/badge.svg)](https://github.com/PawanKonwar/Huggingface-Image-Project/actions/workflows/ml_ci.yml)# Hugging Face Image Classification Project
 
 Custom Vision Transformer (ViT) fine-tuned for **your own classes** using `google/vit-base-patch16-224`. A **dynamic framework** that supports **any number of classes**—no hardcoded labels.
 

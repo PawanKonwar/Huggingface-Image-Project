@@ -1,3 +1,14 @@
+---
+title: Vision Intelligence Pro
+emoji: 🚀
+colorFrom: indigo
+colorTo: blue
+sdk: gradio
+sdk_version: 4.0.0
+app_file: app.py
+pinned: false
+---
+
 [![ML CI](https://github.com/PawanKonwar/Huggingface-Image-Project/actions/workflows/ml_ci.yml/badge.svg)](https://github.com/PawanKonwar/Huggingface-Image-Project/actions/workflows/ml_ci.yml)
 
 Custom Vision Transformer (ViT) fine-tuned for **your own classes** using `google/vit-base-patch16-224`. A **dynamic framework** that supports **any number of classes**—no hardcoded labels.

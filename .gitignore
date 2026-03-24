@@ -44,4 +44,4 @@ Thumbs.db
 # Hugging Face cache
 .cache/
 huggingface/
-
+.gradio/

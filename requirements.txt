@@ -2,6 +2,9 @@
 transformers
 gradio  
 torch
+torchvision
+transformers
+
 
 # Used by training / inference (also from .venv)
 accelerate

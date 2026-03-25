@@ -13,8 +13,9 @@ from src.api.inference import (
     load_model,
     predict,
 )
+from src.utils.paths import TRAINED_MODEL_DIR
 
-DEFAULT_MODEL_PATH = str(Path(__file__).resolve().parent / "trained_model")
+DEFAULT_MODEL_PATH = str(TRAINED_MODEL_DIR)
 
 UNCERTAINTY_THRESHOLD = 0.90  # Show top-2 when top confidence below this
 

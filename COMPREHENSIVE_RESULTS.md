@@ -1,6 +1,6 @@
 # Comprehensive Model Results
 
-This document matches **on-disk data** under `./data/` and the exported metrics in `./results/` (produced at the end of `python train.py`).
+This document matches **on-disk data** under `./data/` and the exported metrics in `./archive/results/` (produced at the end of `python train.py`).
 
 ## Project overview
 
@@ -9,7 +9,7 @@ This document matches **on-disk data** under `./data/` and the exported metrics 
 | **Base checkpoint** | `google/vit-base-patch16-224` |
 | **Custom classes** | `my_cat`, `my_dog`, `my_car`, `my_house`, `my_phone` |
 | **Train / validation split** | 80% / 20%, stratified, `random_state=42` (`sklearn.model_selection.train_test_split`) |
-| **Validation accuracy (Trainer)** | **79.59%** (`eval_accuracy` in `results/eval_summary.json`: `0.795918…`) |
+| **Validation accuracy (Trainer)** | **79.59%** (`eval_accuracy` in `archive/results/eval_summary.json`: `0.795918…`) |
 | **Reported accuracy (sklearn)** | **80%** (two-decimal rounding on the same 49 validation samples) |
 
 ---
@@ -29,7 +29,7 @@ After cleanup, counts are closer to balanced across most classes; `my_house` and
 
 ## Dataset inventory (actual `./data/` counts)
 
-These counts are the **number of image files** per class (extensions: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`). They are mirrored in `results/dataset_split.csv`.
+These counts are the **number of image files** per class (extensions: `.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`). They are mirrored in `archive/results/dataset_split.csv`.
 
 | Class | Images on disk |
 |-------|----------------|
@@ -49,7 +49,7 @@ These counts are the **number of image files** per class (extensions: `.jpg`, `.
 
 ## Stratified split sizes (matches `train.py`)
 
-Same numbers as `results/dataset_split.csv` (generated automatically when you train).
+Same numbers as `archive/results/dataset_split.csv` (generated automatically when you train).
 
 | Class | Total | Train | Validation |
 |-------|------:|------:|-----------:|
@@ -64,7 +64,7 @@ Same numbers as `results/dataset_split.csv` (generated automatically when you tr
 
 ## Validation metrics (per class)
 
-Values below are from a full training run (default **30 epochs**, batch size **8**, capped LR **2e-5**), matching the sklearn `classification_report` printed by `src/models/train.py` and saved to **`results/validation_per_class.csv`**.
+Values below are from a full training run (default **30 epochs**, batch size **8**, capped LR **2e-5**), matching the sklearn `classification_report` printed by `src/models/train.py` and saved to **`archive/results/validation_per_class.csv`**.
 
 | Class | Precision | Recall | F1-score | Support |
 |-------|-----------|--------|----------|--------:|
@@ -87,9 +87,9 @@ Values below are from a full training run (default **30 epochs**, batch size **8
 
 | Path | Purpose |
 |------|---------|
-| `results/dataset_split.csv` | Per-class and total train/val counts |
-| `results/validation_per_class.csv` | Per-class precision, recall, F1, support + averages |
-| `results/eval_summary.json` | `eval_accuracy`, sample counts, split metadata |
+| `archive/results/dataset_split.csv` | Per-class and total train/val counts |
+| `archive/results/validation_per_class.csv` | Per-class precision, recall, F1, support + averages |
+| `archive/results/eval_summary.json` | `eval_accuracy`, sample counts, split metadata |
 | `src/models/train.py` | Writes the above files after each training run |
 
 To refresh all metrics after changing data or hyperparameters:
@@ -111,4 +111,4 @@ python main.py   # Gradio UI
 
 ---
 
-*Last aligned with exported `results/*` and `data/` layout as documented above.*
+*Last aligned with exported `archive/results/*` and `data/` layout as documented above.*

@@ -269,7 +269,7 @@ def train(data_dir=None, model_path=None, output_dir=None,
     print("\nPer-class metrics (validation set):")
     print(classification_report(true_labels, pred_labels, target_names=class_names_eval))
 
-    # Export validation metrics to results/ (source of truth for docs and CI snapshots)
+    # Export validation metrics to archive/results/ (see RESULTS_DIR)
     labels_idx = list(range(len(class_names_eval)))
     prec, rec, f1, sup = precision_recall_fscore_support(
         true_labels,

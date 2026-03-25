@@ -112,7 +112,7 @@ def launch(model_path=None, **launch_kwargs):
     Parameters
     ----------
     model_path :
-        Directory with config + weights. If None, uses ``./trained_model`` (see ``TRAINED_MODEL_DIR``).
+        Directory with config + weights. If None, uses ``models/checkpoint-final`` (see ``TRAINED_MODEL_DIR``).
     launch_kwargs :
         Forwarded to ``gradio.Blocks.launch`` (e.g. ``server_name="0.0.0.0"``, ``server_port=7860``).
     """

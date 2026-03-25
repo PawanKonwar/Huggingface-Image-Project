@@ -64,7 +64,10 @@ This project is organized into a top-level `src/` package (modular code) plus sm
 Key files:
 
 ```
-main.py                   # Entry point: launches the Gradio web UI
+app.py                    # Hugging Face Spaces entry (loads models/checkpoint-final/)
+main.py                   # Entry point: launches the Gradio web UI (same checkpoint path)
+models/checkpoint-final/  # Default save/load location for fine-tuned weights (HF format)
+archive/                  # Intermediate Trainer checkpoints + archived metrics (see archive/README.md)
 src/api/inference.py      # Shared inference + overlay helpers
 src/models/model_custom.py
 src/models/train.py
@@ -227,7 +230,7 @@ python train.py --data_dir ./data --epochs 5 --batch_size 8
 - Loads images from `data/` directory
 - Splits data: 80% training, 20% validation
 - Trains for 5 epochs
-- Saves the trained model to `./trained_model/`
+- Saves the trained model to `./models/checkpoint-final/`
 
 #### 4.2 Training Parameters Explained
 
@@ -235,7 +238,7 @@ python train.py --data_dir ./data --epochs 5 --batch_size 8
 |-----------|---------|-------------|----------------|
 | `--data_dir` | `./data` | Directory with your images | If images are elsewhere |
 | `--model_path` | `./custom_vit_model` | Path to custom model | If using different model |
-| `--output_dir` | `./trained_model` | Where to save trained model | To save to different location |
+| `--output_dir` | `./models/checkpoint-final` | Where to save trained model | To save to different location |
 | `--epochs` | `5` | Number of training iterations | Increase for more training (10-20) |
 | `--batch_size` | `8` | Images per batch | Reduce if out of memory (4-8) |
 | `--learning_rate` | `2e-5` | Learning speed | Usually fine as-is |
@@ -283,7 +286,7 @@ Epochs: 5, Batch size: 8, LR: 2e-05
 Evaluating...
 Validation accuracy: 85.23%
 
-Saving model to ./trained_model...
+Saving model to ./models/checkpoint-final...
 ============================================================
 Training completed!
 ============================================================
@@ -318,7 +321,7 @@ python test.py --image /Users/yourname/Pictures/test_photo.jpg
 Testing Trained Model
 ============================================================
 
-Loading model from ./trained_model...
+Loading model from ./models/checkpoint-final...
 Classes: ['my_cat', 'my_dog', 'my_car', 'my_house', 'my_phone']
 
 Loading image: my_photo.jpg
@@ -370,7 +373,7 @@ python test.py --image photo.jpg --model_path ./my_custom_trained_model
 
 ### Step 6: Test the Web UI (Gradio)
 
-Launch the Gradio app (loads the model from `./trained_model`):
+Launch the Gradio app (loads the model from `./models/checkpoint-final`):
 
 ```bash
 python main.py
@@ -417,7 +420,7 @@ python train.py [options]
 ```
 --data_dir DIR          Directory with class subdirectories (default: ./data)
 --model_path PATH       Path to custom model (default: ./custom_vit_model)
---output_dir DIR        Output directory (default: ./trained_model)
+--output_dir DIR        Output directory (default: ./models/checkpoint-final)
 --epochs N              Number of epochs (default: 5)
 --batch_size N          Batch size (default: 8)
 --learning_rate FLOAT   Learning rate (default: 2e-5)
@@ -454,7 +457,7 @@ python test.py --directory DIR_PATH
 ```
 --image PATH            Path to single image file
 --directory PATH        Directory containing images
---model_path PATH       Path to trained model (default: ./trained_model)
+--model_path PATH       Path to trained model (default: ./models/checkpoint-final)
 ```
 
 **Examples:**
@@ -481,7 +484,7 @@ python main.py
 ```
 
 Notes:
-- The app loads the trained model from `./trained_model`.
+- The app loads the trained model from `./models/checkpoint-final`.
 - You can also run `python app.py` if you prefer the backward-compatible wrapper, but `main.py` is the recommended entry point.
 
 ---
@@ -654,7 +657,7 @@ python test.py --image test.jpg
 
 **Problem:** `Model not found`
 - **Check:** You've run `train.py` successfully
-- **Check:** `./trained_model/` directory exists
+- **Check:** `./models/checkpoint-final/` directory exists
 - **Solution:** Train model first: `python train.py`
 
 **Problem:** `Image not found`

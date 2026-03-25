@@ -5,7 +5,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DATA_DIR = PROJECT_ROOT / "data"
 CUSTOM_MODEL_DIR = PROJECT_ROOT / "custom_vit_model"
-TRAINED_MODEL_DIR = PROJECT_ROOT / "trained_model"
-# Cloud / release layout: copy or symlink a HF Trainer save here, then run ``python app.py``.
+# Final fine-tuned weights (HF format): training writes here; app.py / main.py load from here.
 CHECKPOINT_FINAL_DIR = PROJECT_ROOT / "models" / "checkpoint-final"
-RESULTS_DIR = PROJECT_ROOT / "results"
+TRAINED_MODEL_DIR = CHECKPOINT_FINAL_DIR
+# Training metrics exports (historical snapshot moved under archive/; new runs use this path).
+RESULTS_DIR = PROJECT_ROOT / "archive" / "results"

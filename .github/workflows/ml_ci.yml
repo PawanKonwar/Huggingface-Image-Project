@@ -24,7 +24,7 @@ jobs:
       - name: Lint with flake8
         run: |
           flake8 src main.py test.py app.py \
-            --exclude=venv,.venv,__pycache__,trained_model,custom_vit_model \
+            --exclude=venv,.venv,__pycache__,trained_model,custom_vit_model,archive,.gradio \
             --max-line-length=127 \
             --extend-ignore=E203
 

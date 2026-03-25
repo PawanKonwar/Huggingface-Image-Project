@@ -35,14 +35,14 @@ You can use 5 classes, 10 classes, or any number—just add one folder per class
 
 ## Model Performance
 
-Metrics below are tied to the **current `./data/` layout** and the files in **`./results/`**, which are **rewritten automatically** when you run `python train.py` (see `src/models/train.py`).
+Metrics below are tied to the **current `./data/` layout** and the files in **`./archive/results/`**, which are **rewritten automatically** when you run `python train.py` (see `src/models/train.py`).
 
 | Metric (validation) | Value | Source |
 |---------------------|------:|--------|
-| **Trainer `eval_accuracy`** | **79.59%** | `results/eval_summary.json` |
-| **sklearn `classification_report` accuracy** | **80%** (rounded) | `results/validation_per_class.csv` / training log |
-| **Macro F1** | **0.73** | `results/validation_per_class.csv` |
-| **Weighted F1** | **0.78** | `results/validation_per_class.csv` |
+| **Trainer `eval_accuracy`** | **79.59%** | `archive/results/eval_summary.json` |
+| **sklearn `classification_report` accuracy** | **80%** (rounded) | `archive/results/validation_per_class.csv` / training log |
+| **Macro F1** | **0.73** | `archive/results/validation_per_class.csv` |
+| **Weighted F1** | **0.78** | `archive/results/validation_per_class.csv` |
 
 After an earlier **data audit**, removing noisy examples (especially in `my_house` / `my_phone`) helped lift validation accuracy from about **~51%** into the **~80%** band on the curated set. The latest logged run lands at **79.59%** on **49** validation images (stratified 80/20, `random_state=42`).
 
@@ -54,7 +54,7 @@ Some scraped images **confused `my_house` and `my_dog`** (dogs framed against bu
 
 ### Dataset size snapshot (this repo)
 
-Counts are **image files per folder** under `./data/` (also in `results/dataset_split.csv`):
+Counts are **image files per folder** under `./data/` (also in `archive/results/dataset_split.csv`):
 
 | Class | Images |
 |-------|-------:|
@@ -111,7 +111,7 @@ Creates `./custom_vit_model` with **N** classes (N = number of subfolders in `./
 python train.py --data_dir ./data --epochs 30 --batch_size 8
 ```
 
-**Options:** `--data_dir`, `--model_path`, `--output_dir`, `--epochs`, `--batch_size`, `--learning_rate`. Training uses an 80% train / 20% validation stratified split, logs validation accuracy each epoch, prints a per-class **`classification_report`** at the end, and writes **`results/dataset_split.csv`**, **`results/validation_per_class.csv`**, and **`results/eval_summary.json`**.
+**Options:** `--data_dir`, `--model_path`, `--output_dir`, `--epochs`, `--batch_size`, `--learning_rate`. Training uses an 80% train / 20% validation stratified split, logs validation accuracy each epoch, prints a per-class **`classification_report`** at the end, and writes **`archive/results/dataset_split.csv`**, **`archive/results/validation_per_class.csv`**, and **`archive/results/eval_summary.json`**. By default, weights are saved under **`models/checkpoint-final/`** (see `TRAINED_MODEL_DIR`).
 
 ### Step 4: Test (CLI)
 
@@ -135,7 +135,7 @@ python test.py --image photo.jpg --output result.jpg
 
 ### Step 5: Test (Web UI)
 
-Launch the Gradio app (loads model from `./trained_model`):
+Launch the Gradio app (loads model from **`models/checkpoint-final/`**):
 
 ```bash
 python main.py
@@ -153,23 +153,24 @@ Use the **Examples** (one image per class from `data/`) to try the model immedia
 | Command | Description |
 |--------|-------------|
 | `python model_custom.py` | Build custom model from `./data` class folders |
-| `python train.py [--data_dir ./data] [--epochs 30] ...` | Train; exports metrics under `./results/` |
+| `python train.py [--data_dir ./data] [--epochs 30] ...` | Train; saves weights to `models/checkpoint-final/`; metrics under `./archive/results/` |
 | `python test.py --image <path>` | Single-image test + overlay saved as `prediction_output.jpg` |
 | `python test.py --directory <dir>` | Batch test; confidence and top-2 when uncertain |
-| `python main.py` | Start Gradio web UI for interactive inference |
+| `python main.py` | Start Gradio web UI (loads `models/checkpoint-final/`) |
+| `python app.py` | Same UI on Hugging Face Spaces / explicit checkpoint entry |
 
 ## Documentation
 
 - **README.md** — This file (overview, features, usage)
 - **USER_GUIDE.md** — Step-by-step guide and troubleshooting
-- **COMPREHENSIVE_RESULTS.md** — Dataset counts, audit notes, validation metrics (aligned with `./results/`)
+- **COMPREHENSIVE_RESULTS.md** — Dataset counts, audit notes, validation metrics (aligned with `./archive/results/`)
 
 ## Project Structure
 
 ```
 huggingface-image-project/
 ├── main.py                      # Entry point (launches Gradio UI)
-├── app.py                       # Wrapper (backward-compatible: python app.py)
+├── app.py                       # HF Spaces entry; loads models/checkpoint-final/
 ├── model_custom.py              # Wrapper (backward-compatible: python model_custom.py)
 ├── train.py                     # Wrapper (backward-compatible: python train.py)
 ├── test.py                      # CLI testing (confidence, overlay, top-2)
@@ -192,11 +193,12 @@ huggingface-image-project/
 │       └── download_images_loremflickr.py
 ├── README.md                    # This file
 ├── USER_GUIDE.md                # Detailed user guide
-├── COMPREHENSIVE_RESULTS.md     # Results and analysis (tables ↔ ./results/)
-├── results/                     # dataset_split.csv, validation_per_class.csv, eval_summary.json (from train.py)
+├── COMPREHENSIVE_RESULTS.md     # Results and analysis (tables ↔ ./archive/results/)
+├── models/
+│   └── checkpoint-final/      # Fine-tuned weights (HF format); default train output + app load path
+├── archive/                     # Old checkpoints, archived `results/`, optional `custom_vit_model` copy
 ├── .gitignore
-├── custom_vit_model/          # Created by model_custom.py (not in git)
-├── trained_model/             # Created by train.py (not in git)
+├── custom_vit_model/          # Created by model_custom.py (not in git; optional)
 └── data/                      # Your images, one subfolder per class (not in git)
     ├── my_cat/
     ├── my_dog/
@@ -231,7 +233,7 @@ python main.py   # optional: web UI
 ## Troubleshooting
 
 - **No images found** — Ensure `data/<class_name>/` exists and filenames use supported extensions.
-- **Model not found** — Run `python model_custom.py` first; then train so `./trained_model` exists before `test.py` or `main.py`.
+- **Model not found** — Run `python model_custom.py` first; then train so **`models/checkpoint-final/`** exists before `test.py` or `main.py`.
 - **Out of memory** — Use a smaller `--batch_size` in `train.py`.
 
 ## Requirements

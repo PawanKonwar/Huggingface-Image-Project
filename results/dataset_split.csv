@@ -1,7 +1,0 @@
-class,total_images,train_images,val_images
-my_car,60,48,12
-my_cat,60,48,12
-my_dog,60,48,12
-my_house,46,36,10
-my_phone,16,13,3
-ALL,242,193,49

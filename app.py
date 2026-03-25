@@ -1,20 +1,22 @@
-"""
-Launch the Gradio UI using fine-tuned weights under ``models/checkpoint-final/``.
-
-The path is resolved relative to this file’s directory (project root), so it works
-when the repo is deployed to a cloud instance with the same layout.
-
-For local default (``./trained_model``), use ``python main.py`` instead.
-"""
-
+import os
 from pathlib import Path
-
 from src.web.app import launch
 
-# Project root = directory containing this file
+# Project root
 _ROOT = Path(__file__).resolve().parent
-CHECKPOINT_DIR = _ROOT / "models" / "checkpoint-final"
-
+# Force this to be a string for compatibility with Transformers
+CHECKPOINT_DIR = str(_ROOT / "models" / "checkpoint-final")
 
 if __name__ == "__main__":
+    # DEBUG: Let's see if the files are actually where we think they are
+    if os.path.exists(CHECKPOINT_DIR):
+        print(f"✅ Found directory: {CHECKPOINT_DIR}")
+        print(f"📁 Files inside: {os.listdir(CHECKPOINT_DIR)}")
+    else:
+        print(f"❌ DIRECTORY NOT FOUND: {CHECKPOINT_DIR}")
+        # Let's see what IS in the models folder
+        models_path = str(_ROOT / "models")
+        if os.path.exists(models_path):
+            print(f"📂 Contents of /models/: {os.listdir(models_path)}")
+    
     launch(model_path=CHECKPOINT_DIR)

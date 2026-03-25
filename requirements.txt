@@ -5,6 +5,7 @@ transformers
 gradio
 numpy
 Pillow
+audioop-lts
 
 # Used by training / inference (also from .venv)
 accelerate==1.12.0

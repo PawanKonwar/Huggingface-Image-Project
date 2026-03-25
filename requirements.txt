@@ -1,10 +1,10 @@
 # Pinned to versions in .venv (python -m pip show …) for reproducible installs.
-torch==2.10.0
-torchvision==0.25.0
-transformers==5.0.0
-gradio==6.9.0
-numpy==2.4.2
-pillow==12.1.0
+torch
+torchvision
+transformers
+gradio
+numpy
+Pillow
 
 # Used by training / inference (also from .venv)
 accelerate==1.12.0

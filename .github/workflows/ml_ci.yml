@@ -20,17 +20,17 @@ jobs:
 
       - name: Install dependencies
         run: |
-           python -m pip install --upgrade pip
-           pip install -r requirements.txt
-           pip install -r requirements-dev.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
 
       - name: Lint with flake8
         run: |
-          flake8 src main.py test.py app.py \
+          python -m flake8 src main.py test.py app.py \
             --exclude=venv,.venv,__pycache__,trained_model,custom_vit_model,archive,.gradio \
             --max-line-length=127 \
             --extend-ignore=E203
 
       - name: Smoke test (imports)
-        run: >
+        run: |
           python -c "import torch; import transformers; from src.models.train import Trainer; assert Trainer is not None; print('Smoke test passed: torch, transformers, Trainer OK')"

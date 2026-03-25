@@ -2,9 +2,7 @@
 torch
 torchvision
 transformers
-gradio
-numpy
-Pillow
+gradio  
 audioop-lts
 
 # Used by training / inference (also from .venv)
